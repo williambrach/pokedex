@@ -1,0 +1,14 @@
+{
+  "name": "oliver-pokedex",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pokémon card collection tracker — runs entirely in the browser, with Cardmarket price estimates. Deployable to GitHub Pages.",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node build.mjs && npx --yes serve dist -l 5173"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}

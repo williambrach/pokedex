@@ -1,0 +1,34 @@
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  min-height: 100%;
+  overscroll-behavior: none;
+  font-family: -apple-system, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background: radial-gradient(120% 120% at 50% 0%, #d7dbe2, #b9bec8);
+  color: #13151a;
+}
+button { font-family: inherit; }
+input, textarea, select { font-family: inherit; }
+
+/* Desktop: scaled device mockup, centered on the gradient stage. */
+.stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+.device-wrap { transform: scale(var(--scale, 1)); transform-origin: center center; }
+
+/* Full-screen (phone) mode fills the viewport, no gradient backdrop. */
+.device-screen { background: #eef0f4; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes sheetUp { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes sheetSlide { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+/* Hide scrollbars for a native feel; keep keyboard/scroll working. */
+.device-screen ::-webkit-scrollbar { width: 0; height: 0; }
+.device-screen * { scrollbar-width: none; }
