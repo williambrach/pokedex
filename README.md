@@ -1,5 +1,7 @@
 # Pokédex — Card Collection
 
+> AI SLOP WARNING ! This repo is 100% AI generated.
+
 A mobile-first Pokémon **card collection tracker**. Browse all 1025 Pokémon, pick the
 real TCG card you own (or want), and track your collection's value — all in your
 browser. **No backend, no account.** Everything is stored locally, and Cardmarket
