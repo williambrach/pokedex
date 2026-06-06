@@ -277,7 +277,7 @@ const SlotCard = React.memo(function SlotCard({ mon, entry, status, style, typeC
         background: showCard ? '#f4f5f8' : (typeColors ? `linear-gradient(160deg, ${grad[0]}22, ${grad[1]}14)` : '#f4f5f8'),
         boxShadow: showCard ? 'none' : 'inset 0 0 0 2px rgba(0,0,0,.04)',
       }}>
-        {card ? cardImg : (
+        {showCard ? cardImg : (
           <div style={{ textAlign: 'center', width: '100%', padding: 4 }}>
             <img src={SPRITE.art(mon.id)} alt="" loading="lazy" style={{ width: '76%', filter: 'grayscale(.2) opacity(.32)' }} />
           </div>
