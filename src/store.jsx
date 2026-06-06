@@ -52,9 +52,13 @@ async function clearPhotos() {
 }
 
 // ---- collection hook --------------------------------------------------------
+// A picked card is "empty" (tba) until the user explicitly marks it owned or
+// wishlist — picking a card alone never puts it on the wishlist.
 function statusOf(entry) {
   if (!entry || !entry.card) return 'tba';
-  return entry.owned ? 'owned' : 'want';
+  if (entry.owned) return 'owned';
+  if (entry.want) return 'want';
+  return 'tba';
 }
 
 // Best price estimate for an entry: a manually-entered value wins, otherwise the
@@ -82,7 +86,7 @@ function useCollection() {
     const cur = collRef.current[id] || {};
     const merged = { ...cur, ...patch, updatedAt: Date.now() };
     // prune empty entry
-    const isEmpty = !merged.card && !merged.owned && !merged.note &&
+    const isEmpty = !merged.card && !merged.owned && !merged.want && !merged.note &&
       !merged.value && !merged.hasPhoto;
     const next = { ...collRef.current };
     if (isEmpty) delete next[id]; else next[id] = merged;

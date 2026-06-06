@@ -9,11 +9,17 @@ const _tcgMem = {}; // query -> results array
 // Round to cents, treating 0 / missing as null.
 const _eur = (v) => (typeof v === 'number' && v > 0 ? Math.round(v * 100) / 100 : null);
 
+// First positive price among the given fields (handles 0 / missing).
+const _pick = (p, ...keys) => { for (const k of keys) { const v = _eur(p[k]); if (v != null) return v; } return null; };
+
 // Minimal card shape we persist when a user assigns a card.
 function slimCard(c) {
   const cm = c.cardmarket || {};
   const p = cm.prices || {};
-  const trend = _eur(p.trendPrice) || _eur(p.averageSellPrice) || _eur(p.avg30) || _eur(p.lowPrice);
+  // Many cards (esp. commons/uncommons in modern sets) only carry reverse-holo
+  // Cardmarket prices — fall back through those too so every card gets a value.
+  const trend = _pick(p, 'trendPrice', 'reverseHoloTrend', 'averageSellPrice', 'reverseHoloSell',
+    'avg30', 'reverseHoloAvg30', 'avg7', 'avg1', 'lowPrice', 'reverseHoloLow', 'lowPriceExPlus', 'suggestedPrice');
   return {
     id: c.id,
     name: c.name,
@@ -29,9 +35,9 @@ function slimCard(c) {
     setLogo: c.set && c.set.images ? c.set.images.logo : null,
     // Cardmarket (EUR) — straight from the API, no scraping
     price: trend,                            // headline estimate (trend)
-    priceTrend: _eur(p.trendPrice),
-    priceAvg: _eur(p.avg30) || _eur(p.averageSellPrice),
-    priceLow: _eur(p.lowPrice),
+    priceTrend: _pick(p, 'trendPrice', 'reverseHoloTrend'),
+    priceAvg: _pick(p, 'avg30', 'reverseHoloAvg30', 'averageSellPrice', 'reverseHoloSell'),
+    priceLow: _pick(p, 'lowPrice', 'reverseHoloLow', 'lowPriceExPlus'),
     priceUpdated: cm.updatedAt || null,
     cmUrl: cm.url || null,                   // direct product page
   };

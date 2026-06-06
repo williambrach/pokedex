@@ -185,7 +185,10 @@ const SlotCard = React.memo(function SlotCard({ mon, entry, status, style, typeC
   const st = STATUS[status];
   const cv = { contentVisibility: 'auto', containIntrinsicSize: `0 ${cvHeight}px` };
 
-  const cardImg = card ? (
+  // Only surface the real card art once it's owned/wishlist — an unmarked pick
+  // (status 'tba') keeps the plain Pokémon preview sprite.
+  const showCard = !!card && status !== 'tba';
+  const cardImg = showCard ? (
     <img src={card.img} alt={card.name} loading="lazy" decoding="async"
       style={{ width: '100%', height: '100%', objectFit: 'contain', filter: status === 'want' ? 'saturate(.92)' : 'none' }} />
   ) : null;
@@ -205,7 +208,7 @@ const SlotCard = React.memo(function SlotCard({ mon, entry, status, style, typeC
         <div style={{ aspectRatio: '63/88', borderRadius: 5, overflow: 'hidden', background: 'rgba(124,252,155,.06)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
           boxShadow: 'inset 0 0 0 1px rgba(124,252,155,.18)' }}>
-          {card ? cardImg : (
+          {showCard ? cardImg : (
             <div style={{ textAlign: 'center', width: '100%' }}>
               <img src={SPRITE.pixel(mon.id)} alt="" loading="lazy"
                 style={{ width: '64%', imageRendering: 'pixelated', filter: 'brightness(0) invert(1) opacity(.25) drop-shadow(0 0 1px #7CFC9B)' }} />
@@ -238,7 +241,7 @@ const SlotCard = React.memo(function SlotCard({ mon, entry, status, style, typeC
         </div>
         <div style={{ aspectRatio: '63/88', borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,.16)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, backdropFilter: 'blur(2px)' }}>
-          {card ? cardImg : (
+          {showCard ? cardImg : (
             <div style={{ textAlign: 'center' }}>
               <img src={SPRITE.home(mon.id)} alt="" loading="lazy" style={{ width: '74%', filter: 'brightness(0) invert(1) opacity(.32)' }} />
               <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 1, opacity: .6, marginTop: -6 }}>—</div>
@@ -271,8 +274,8 @@ const SlotCard = React.memo(function SlotCard({ mon, entry, status, style, typeC
       <div style={{
         aspectRatio: '63/88', borderRadius: 10, overflow: 'hidden', position: 'relative',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: card ? '#f4f5f8' : (typeColors ? `linear-gradient(160deg, ${grad[0]}22, ${grad[1]}14)` : '#f4f5f8'),
-        boxShadow: card ? 'none' : 'inset 0 0 0 2px rgba(0,0,0,.04)',
+        background: showCard ? '#f4f5f8' : (typeColors ? `linear-gradient(160deg, ${grad[0]}22, ${grad[1]}14)` : '#f4f5f8'),
+        boxShadow: showCard ? 'none' : 'inset 0 0 0 2px rgba(0,0,0,.04)',
       }}>
         {card ? cardImg : (
           <div style={{ textAlign: 'center', width: '100%', padding: 4 }}>
@@ -284,7 +287,7 @@ const SlotCard = React.memo(function SlotCard({ mon, entry, status, style, typeC
       <div>
         <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: -0.2 }}>{mon.name}</div>
         <div style={{ fontSize: 11, color: '#9aa0a6', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {card ? `${card.setName} · ${card.number}` : mon.types.map(t => POKE_TYPES[t].name).join(' / ')}
+          {showCard ? `${card.setName} · ${card.number}` : mon.types.map(t => POKE_TYPES[t].name).join(' / ')}
         </div>
       </div>
     </button>

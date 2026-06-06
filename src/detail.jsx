@@ -109,6 +109,21 @@ function Chips({ options, value, onChange }) {
   );
 }
 
+// Big toggle button used to mark a card owned / wishlist (tap again to clear).
+function StateBtn({ active, color, icon, label, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+      padding: '13px 8px', borderRadius: 13, cursor: 'pointer', fontWeight: 700, fontSize: 14.5,
+      border: active ? `2px solid ${color}` : '2px solid #eceef2',
+      background: active ? color : '#f7f8fa',
+      color: active ? '#fff' : '#5b6068', transition: 'background .15s, border-color .15s',
+    }}>
+      {icon}{label}
+    </button>
+  );
+}
+
 // ── price block ────────────────────────────────────────────────────────────────
 function PriceBlock({ card }) {
   if (card.price == null) {
@@ -151,9 +166,20 @@ function DetailSheet({ mon, entry, status, onUpdate, onClose }) {
     return () => { if (url) URL.revokeObjectURL(url); };
   }, [mon.id, entry && entry.hasPhoto]);
 
+  // Picking a card is neutral — it does NOT auto-add to the wishlist. The user
+  // chooses "I want it" / "I own it" afterwards (or leaves it as just a pick).
   const pickCard = (c) => { onUpdate(mon.id, { card: c }); setSearching(false); };
-  const removeCard = () => onUpdate(mon.id, { card: null, owned: false });
-  const setOwned = (v) => onUpdate(mon.id, { owned: v });
+  const removeCard = () => onUpdate(mon.id, { card: null, owned: false, want: false });
+  const setState = (s) => onUpdate(mon.id, { owned: s === 'owned', want: s === 'want' });
+
+  // Accept either comma or dot as the decimal separator (EU keyboards type ","),
+  // keep a single separator, and store it dot-normalised so Number() parses it.
+  const onValue = (raw) => {
+    let v = String(raw).replace(/[^\d.,]/g, '').replace(/,/g, '.');
+    const dot = v.indexOf('.');
+    if (dot !== -1) v = v.slice(0, dot + 1) + v.slice(dot + 1).replace(/\./g, '');
+    onUpdate(mon.id, { value: v });
+  };
 
   const onPhoto = async (e) => {
     const f = e.target.files && e.target.files[0];
@@ -235,21 +261,21 @@ function DetailSheet({ mon, entry, status, onUpdate, onClose }) {
           )}
         </div>
 
-        {/* OWNED toggle (only when a card exists) */}
+        {/* STATUS selector (only when a card exists) — own / want / neither */}
         {card && (
-          <div style={{ background: '#fff', borderRadius: 18, padding: '4px 16px', marginBottom: 16, boxShadow: '0 1px 2px rgba(20,30,50,.05), 0 8px 24px rgba(20,30,50,.06)' }}>
-            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', cursor: 'pointer' }}>
-              <div>
-                <div style={{ fontSize: 15.5, fontWeight: 700 }}>I own this card</div>
-                <div style={{ fontSize: 12.5, color: '#8b9099', marginTop: 2 }}>{owned ? 'In your collection' : 'On your wishlist for now'}</div>
-              </div>
-              <button onClick={() => setOwned(!owned)} aria-label="owned" style={{
-                width: 52, height: 31, borderRadius: 999, border: 0, cursor: 'pointer', position: 'relative',
-                background: owned ? '#2f9e57' : '#d5d9e0', transition: 'background .2s', flexShrink: 0,
-              }}>
-                <span style={{ position: 'absolute', top: 3, left: owned ? 24 : 3, width: 25, height: 25, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,.25)', transition: 'left .2s' }} />
-              </button>
-            </label>
+          <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 16, boxShadow: '0 1px 2px rgba(20,30,50,.05), 0 8px 24px rgba(20,30,50,.06)' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#8b9099', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 10 }}>Add to my collection</div>
+            <div style={{ display: 'flex', gap: 9 }}>
+              <StateBtn active={status === 'want'} color="#e0922f" icon={<Icon.bookmark s={16} />} label="I want it"
+                onClick={() => setState(status === 'want' ? null : 'want')} />
+              <StateBtn active={status === 'owned'} color="#2f9e57" icon={<Icon.check s={16} />} label="I own it"
+                onClick={() => setState(status === 'owned' ? null : 'owned')} />
+            </div>
+            <div style={{ fontSize: 12, color: '#9aa0a6', marginTop: 10, lineHeight: 1.4 }}>
+              {status === 'owned' ? 'In your collection.'
+                : status === 'want' ? 'On your wishlist.'
+                : 'Just a pick for now — tap one above to add it.'}
+            </div>
           </div>
         )}
 
@@ -260,7 +286,7 @@ function DetailSheet({ mon, entry, status, onUpdate, onClose }) {
             <Field label="Variant"><Chips options={VARIANTS} value={(entry && entry.variant) || ''} onChange={v => onUpdate(mon.id, { variant: v })} /></Field>
             <Field label="Value / price">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', height: 46, borderRadius: 12, background: '#f0f1f4' }}>
-                <input type="number" inputMode="decimal" value={(entry && entry.value) || ''} onChange={e => onUpdate(mon.id, { value: e.target.value })}
+                <input type="text" inputMode="decimal" value={(entry && entry.value) || ''} onChange={e => onValue(e.target.value)}
                   placeholder={card.price != null ? String(card.price) : '0'} style={{ flex: 1, border: 0, outline: 0, background: 'transparent', font: 'inherit', fontSize: 16, fontWeight: 600, minWidth: 0 }} />
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#8b9099' }}>€</span>
               </div>
