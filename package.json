@@ -1,14 +1,24 @@
 {
   "name": "oliver-pokedex",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "type": "module",
-  "description": "Pokémon card collection tracker — runs entirely in the browser, with Cardmarket price estimates. Deployable to GitHub Pages.",
+  "description": "Pokémon card collection tracker — Next.js + Supabase (accounts, cross-device sync).",
   "scripts": {
-    "build": "node build.mjs",
-    "preview": "node build.mjs && npx --yes serve dist -l 5173"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.47.10",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0"
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "typescript": "^5.7.3"
   }
 }
