@@ -134,7 +134,7 @@ export default function LoginForm() {
         <div style={{ textAlign: 'center', marginBottom: 22, fontSize: 14, color: '#8b9099' }}>
           {step === 'email'
             ? 'Sign in to sync your card collection across devices.'
-            : `Enter the 6-digit code we emailed to ${email}.`}
+            : `Enter the code we emailed to ${email}.`}
         </div>
 
         {step === 'email' ? (
@@ -162,11 +162,11 @@ export default function LoginForm() {
               inputMode="numeric"
               autoComplete="one-time-code"
               pattern="[0-9]*"
-              maxLength={6}
+              maxLength={10}
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              placeholder="123456"
-              style={{ ...inputStyle, textAlign: 'center', letterSpacing: 8, fontSize: 22, fontWeight: 700 }}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              placeholder="12345678"
+              style={{ ...inputStyle, textAlign: 'center', letterSpacing: 6, fontSize: 22, fontWeight: 700 }}
             />
             {err && <div style={{ color: '#e23b2e', fontSize: 13, marginBottom: 12, textAlign: 'center' }}>{err}</div>}
             <button type="submit" disabled={loading || code.length < 6} style={buttonStyle(loading || code.length < 6)}>
