@@ -1,26 +1,85 @@
 'use client';
-// app/login/LoginForm.tsx — passwordless magic-link form.
+// app/login/LoginForm.tsx — passwordless sign-in via a 6-digit email code.
+// Two steps: (1) enter email -> Supabase mails a one-time code, (2) type the
+// code -> verifyOtp establishes the session. Code entry happens in the same
+// browser, so it works reliably on mobile (no cross-browser / in-app-browser
+// PKCE problem that magic-link clicks suffer from).
 import { useState, type FormEvent } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  boxSizing: 'border-box',
+  height: 48,
+  padding: '0 16px',
+  borderRadius: 13,
+  border: '1px solid #e2e5ea',
+  background: '#f7f8fa',
+  fontSize: 16,
+  outline: 'none',
+  marginBottom: 12,
+};
+
+const buttonStyle = (loading: boolean): React.CSSProperties => ({
+  width: '100%',
+  height: 48,
+  borderRadius: 13,
+  border: 0,
+  background: '#e23b2e',
+  color: '#fff',
+  fontWeight: 700,
+  fontSize: 15.5,
+  cursor: loading ? 'default' : 'pointer',
+  opacity: loading ? 0.7 : 1,
+});
+
 export default function LoginForm() {
   const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState('');
+  const [step, setStep] = useState<'email' | 'code'>('email');
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: FormEvent) {
+  async function sendCode(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setErr(null);
     const supabase = createClient();
+    // emailRedirectTo keeps the magic-link fallback working too; the email
+    // template decides whether it shows the link, the {{ .Token }} code, or both.
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setLoading(false);
     if (error) setErr(error.message);
-    else setSent(true);
+    else setStep('code');
+  }
+
+  async function verifyCode(e: FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setErr(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code.trim(),
+      type: 'email',
+    });
+    if (error) {
+      setLoading(false);
+      setErr(error.message);
+      return;
+    }
+    // Session cookies are set — hard-navigate so the server re-reads them and
+    // middleware lets us through to the collection.
+    window.location.assign('/');
+  }
+
+  function backToEmail() {
+    setStep('email');
+    setCode('');
+    setErr(null);
   }
 
   return (
@@ -73,27 +132,13 @@ export default function LoginForm() {
 
         <div style={{ textAlign: 'center', marginBottom: 4, fontSize: 22, fontWeight: 800, letterSpacing: -0.4 }}>Pokédex</div>
         <div style={{ textAlign: 'center', marginBottom: 22, fontSize: 14, color: '#8b9099' }}>
-          Sign in to sync your card collection across devices.
+          {step === 'email'
+            ? 'Sign in to sync your card collection across devices.'
+            : `Enter the 6-digit code we emailed to ${email}.`}
         </div>
 
-        {sent ? (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '20px 14px',
-              borderRadius: 14,
-              background: '#f0fbf3',
-              color: '#1f7a44',
-              fontSize: 14.5,
-              lineHeight: 1.5,
-            }}
-          >
-            <b>Check your inbox.</b>
-            <br />
-            We sent a magic link to {email}. Open it on this device to finish signing in.
-          </div>
-        ) : (
-          <form onSubmit={onSubmit}>
+        {step === 'email' ? (
+          <form onSubmit={sendCode}>
             <input
               type="email"
               required
@@ -101,43 +146,52 @@ export default function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                height: 48,
-                padding: '0 16px',
-                borderRadius: 13,
-                border: '1px solid #e2e5ea',
-                background: '#f7f8fa',
-                fontSize: 16,
-                outline: 'none',
-                marginBottom: 12,
-              }}
+              style={inputStyle}
             />
             {err && <div style={{ color: '#e23b2e', fontSize: 13, marginBottom: 12, textAlign: 'center' }}>{err}</div>}
+            <button type="submit" disabled={loading} style={buttonStyle(loading)}>
+              {loading ? 'Sending…' : 'Send code'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={verifyCode}>
+            <input
+              type="text"
+              required
+              autoFocus
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="123456"
+              style={{ ...inputStyle, textAlign: 'center', letterSpacing: 8, fontSize: 22, fontWeight: 700 }}
+            />
+            {err && <div style={{ color: '#e23b2e', fontSize: 13, marginBottom: 12, textAlign: 'center' }}>{err}</div>}
+            <button type="submit" disabled={loading || code.length < 6} style={buttonStyle(loading || code.length < 6)}>
+              {loading ? 'Verifying…' : 'Verify & sign in'}
+            </button>
             <button
-              type="submit"
-              disabled={loading}
+              type="button"
+              onClick={backToEmail}
               style={{
                 width: '100%',
-                height: 48,
-                borderRadius: 13,
+                marginTop: 10,
+                background: 'none',
                 border: 0,
-                background: '#e23b2e',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: 15.5,
-                cursor: loading ? 'default' : 'pointer',
-                opacity: loading ? 0.7 : 1,
+                color: '#8b9099',
+                fontSize: 13,
+                cursor: 'pointer',
               }}
             >
-              {loading ? 'Sending…' : 'Send magic link'}
+              ← Use a different email
             </button>
           </form>
         )}
 
         <div style={{ textAlign: 'center', marginTop: 18, fontSize: 11.5, color: '#aab0b8', lineHeight: 1.5 }}>
-          No password needed. We&apos;ll email you a one-tap sign-in link.
+          No password needed. We&apos;ll email you a one-time sign-in code.
         </div>
       </div>
     </div>
